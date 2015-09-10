@@ -3,7 +3,7 @@ TeamVelocity
 
 ## Overview
 
-![alt text](https://github.com/nikantonelli/TeamVelocity/blob/master/docs/Untitled.png)
+![alt text](https://github.com/nikantonelli/TeamVelocity/blob/master/Images/Untitled.png)
 
 ## License
 
