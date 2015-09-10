@@ -67,6 +67,9 @@ Ext.define('CustomApp', {
 
         var app = this;
 
+        app.add( {
+        });
+
         Ext.getCmp('StartDate').on( {
             change: this._chartRefresh,
             scope: app
@@ -127,7 +130,7 @@ Ext.define('CustomApp', {
         var oredFilters = [];
 
         _.each(iterations, function (iter) {
-            oredFilters.push({ property: 'Iteration._ref', value: iter._ref});
+            oredFilters.push({ property: 'Iteration._ref', value: iter.get('_ref')});
         });
 
         if (oredFilters.length === 0)
@@ -142,28 +145,28 @@ Ext.define('CustomApp', {
                     var sortedUS = []; 
                     _.each(iterations, function(iter) {
                         sortedUS.push( {
-                            'iteration' : iter,
+                            'Iteration' : iter,
                             'data'      : _.filter(data,
                             function(record) {
                                 if (!record.get('Iteration')) return false;
-                                return record.get('Iteration')._ref === iter._ref; }
+                                return record.get('Iteration')._ref === iter.get('_ref'); }
                             )
                         });
                     });
                     var summs = [];
                     _.each(sortedUS,
                         function(n) {
-                            if (n.length){
+                            if (n.data.length){
 
-                                var lIter = n.get('Iteration')._refObjectName +
-                                                ' (' + n.get('Iteration').Project + ')';
+                                var lIter = n.Iteration.get('_refObjectName') +
+                                                ' (' + n.Iteration.get('Project')._refObjectName + ')';
                                 var InIter = 0;
                                 var AfterIter = 0;
                                 var TotalIter = 0;
-                                var iterEndDate = n.get('Iteration').EndDate;
+                                var iterEndDate = n.Iteration.get('EndDate');
                                 _.each(n.data, function(p) {
                                     if ( p.get('AcceptedDate') ) {
-            debugger;
+
                                     if ( p.get('AcceptedDate') <= iterEndDate) {
                                         InIter += p.get('PlanEstimate');
                                     } else {
@@ -239,7 +242,13 @@ Ext.define('CustomApp', {
                                 type: 'Category',
                                 position: 'bottom',
                                 fields: ['Iteration'],
-                                title: 'Iteration'
+                                title: 'Iteration',
+                                label: {
+                                    rotate: {
+                                        degrees: 90
+                                    }
+                                }
+
                             }
                         ],
                         plotOptions: {
@@ -274,6 +283,17 @@ Ext.define('CustomApp', {
                                 yField: 'Average',
                                 markerConfig: {
                                     type: 'circle',
+                                    size: 3
+                                }
+                            },
+                            {
+                                type: 'line',
+                                axis: 'left',
+                                highlight: true,
+                                xField: 'Iteration',
+                                yField: 'Total',
+                                markerConfig: {
+                                    type: 'cross',
                                     size: 3
                                 }
                             }
