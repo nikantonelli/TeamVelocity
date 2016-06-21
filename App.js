@@ -195,7 +195,7 @@ Ext.define('CustomApp', {
                         '#f9a814',
                         '#ee6c19',
                         '#105cab',
-                        '107c1e',
+                        '#107c1e',
                         '#df1a7b',
                         '#4a1d7e'
                     ];
