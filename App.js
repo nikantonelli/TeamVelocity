@@ -121,7 +121,7 @@ Ext.define('CustomApp', {
         var oredFilters = [];
 
         _.each(iterations, function (iter) {
-            oredFilters.push({ property: 'Iteration._ref', value: iter.get('_ref')});
+            oredFilters.push({ property: 'Iteration', value: iter.get('_ref')});
         });
 
         if (oredFilters.length === 0)
@@ -129,7 +129,8 @@ Ext.define('CustomApp', {
 
         usStore = Ext.create('Rally.data.wsapi.Store', {
             model: 'User Story',
-//            filters: Rally.data.wsapi.Filter.or(oredFilters),
+            limit: Infinity,
+            filters: Rally.data.wsapi.Filter.or(oredFilters),
             autoLoad: 'true',
             listeners: {
                 load: function(store, data, success) {

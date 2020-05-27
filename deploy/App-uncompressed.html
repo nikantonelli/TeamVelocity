@@ -3,7 +3,7 @@
 <head>
     <title>TeamVelocity</title>
 
-    <script type="text/javascript" src="/apps/2.0/sdk-debug.js"></script>
+    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function () {
@@ -130,7 +130,7 @@ Ext.define('CustomApp', {
         var oredFilters = [];
 
         _.each(iterations, function (iter) {
-            oredFilters.push({ property: 'Iteration._ref', value: iter.get('_ref')});
+            oredFilters.push({ property: 'Iteration', value: iter.get('_ref')});
         });
 
         if (oredFilters.length === 0)
@@ -138,7 +138,8 @@ Ext.define('CustomApp', {
 
         usStore = Ext.create('Rally.data.wsapi.Store', {
             model: 'User Story',
-//            filters: Rally.data.wsapi.Filter.or(oredFilters),
+            limit: Infinity,
+            filters: Rally.data.wsapi.Filter.or(oredFilters),
             autoLoad: 'true',
             listeners: {
                 load: function(store, data, success) {
@@ -204,7 +205,7 @@ Ext.define('CustomApp', {
                         '#f9a814',
                         '#ee6c19',
                         '#105cab',
-                        '107c1e',
+                        '#107c1e',
                         '#df1a7b',
                         '#4a1d7e'
                     ];
@@ -353,7 +354,8 @@ Ext.define('CustomApp', {
 
             Rally.launchApp('CustomApp', {
                 name:"TeamVelocity",
-	            parentRepos:""
+                parentRepos:"",
+                version:"0.1.1"
             });
 
         });
