@@ -23,6 +23,14 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
 
+    config: {
+        defaultSettings: {
+            UseDefects: true,
+            UseTestSets: true,
+            UseTestCases: true
+        }
+    },
+
     items: [
         {
             xtype: 'container',
@@ -52,6 +60,27 @@ Ext.define('CustomApp', {
         }
 
     ],
+
+    getSettingsFields: function() {
+        return [
+            {
+                name: 'UseDefects',
+                fieldLabel: 'Include Defects',
+                xtype: 'rallycheckboxfield'
+            },
+            {
+                name: 'UseTestCases',
+                fieldLabel: 'Include TestCases',
+                xtype: 'rallycheckboxfield'
+            },
+            {
+                name: 'UseTestSets',
+                fieldLabel: 'Include TestSets',
+                xtype: 'rallycheckboxfield'
+            }
+
+        ];
+    },
 
     iterStore: null,
     iterationOIDs: [],
@@ -137,6 +166,17 @@ Ext.define('CustomApp', {
         if (oredFilters.length === 0)
             oredFilters = null;
 
+        var models = ['User Story'];
+
+        if (this.getSetting('UseDefects')){
+            models.push('Defect');
+        }
+        if (this.getSetting('UseTestCases')){
+            models.push('Test Case');
+        }
+        if (this.getSetting('UseTestSets')){
+            models.push('Test Set');
+        }
         usStore = Ext.create('Rally.data.wsapi.artifact.Store', {
             models: ['User Story', 'Defect','Test Case', 'Test Set'],
             limit: Infinity,
