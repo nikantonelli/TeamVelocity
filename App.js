@@ -4,6 +4,7 @@ Ext.define('iterRecord', {
         { name: 'Iteration', type: 'string' },
         { name: 'During', type: 'int' },
         { name: 'After', type: 'int' },
+        { name: 'Outstanding', type: 'int' },
         { name: 'Total', type: 'float' },
         { name: 'Average', type: 'float' }
     ]
@@ -127,8 +128,8 @@ Ext.define('CustomApp', {
         if (oredFilters.length === 0)
             oredFilters = null;
 
-        usStore = Ext.create('Rally.data.wsapi.Store', {
-            model: 'User Story',
+        usStore = Ext.create('Rally.data.wsapi.artifact.Store', {
+            models: ['User Story', 'Defect','Test Case', 'Test Set'],
             limit: Infinity,
             filters: Rally.data.wsapi.Filter.or(oredFilters),
             autoLoad: 'true',
@@ -155,22 +156,27 @@ Ext.define('CustomApp', {
                                 var InIter = 0;
                                 var AfterIter = 0;
                                 var TotalIter = 0;
+                                var Never = 0;
                                 var iterEndDate = n.Iteration.get('EndDate');
                                 _.each(n.data, function(p) {
                                     if ( p.get('AcceptedDate') ) {
-
-                                    if ( p.get('AcceptedDate') <= iterEndDate) {
-                                        InIter += p.get('PlanEstimate');
-                                    } else {
-                                        AfterIter += p.get('PlanEstimate');
+                                        if ( p.get('AcceptedDate') <= iterEndDate) {
+                                            InIter += p.get('PlanEstimate');
+                                        } else {
+                                            AfterIter += p.get('PlanEstimate');
+                                        }
+                                        TotalIter += p.get('PlanEstimate');
                                     }
-                                    TotalIter += p.get('PlanEstimate');
+                                    else {
+                                        Never += p.get('PlanEstimate');
+                                        TotalIter += p.get('PlanEstimate');
                                     }
                                 });
                                 summs.push(  {
                                         'Iteration': lIter,
                                         'During': InIter,
                                         'After': AfterIter,
+                                        'Outstanding': Never,
                                         'Total': TotalIter,
                                         'Average': 0 });
                             }
@@ -226,7 +232,7 @@ Ext.define('CustomApp', {
                             {
                                 type: 'Numeric',
                                 position: 'left',
-                                field: ['During', 'After', 'Total', 'Average'],
+                                field: ['During', 'After', 'Outstanding', 'Total', 'Average'],
                                 title: 'Velocity',
                                 grid: true
                             },
@@ -244,17 +250,19 @@ Ext.define('CustomApp', {
                             }
                         ],
                         plotOptions: {
-                            column: {
-                                stacking: 'normal'
+                            series: {
+                                stacking: 'normal',
+                                stack: 0
                             }
                         },
 
                         series: [
                             {
                                 type: 'column',
+                                stack: 0,
                                 axis: 'left',
                                 xField: 'Iteration',
-                                yField: ['During', 'After'],
+                                yField: ['During', 'After', 'Outstanding'],
                                 markerConfig: {
                                     type: 'cross',
                                     size: 3
