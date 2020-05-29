@@ -18,7 +18,14 @@ Ext.define('CustomApp', {
         defaultSettings: {
             UseDefects: true,
             UseTestSets: true,
-            UseTestCases: true
+            UseTestCases: true,
+            StackColumns: false
+        }
+    },
+
+    listeners: {
+        resize: function() {
+            if ( Ext.getCmp('CapChart')) { this._chartRefresh(); }
         }
     },
 
@@ -52,6 +59,10 @@ Ext.define('CustomApp', {
 
     ],
 
+    onSettingsUpdate: function() {
+        this._chartRefresh();
+    },
+
     getSettingsFields: function() {
         return [
             {
@@ -68,6 +79,11 @@ Ext.define('CustomApp', {
                 name: 'UseTestSets',
                 fieldLabel: 'Include TestSets',
                 xtype: 'rallycheckboxfield'
+            },
+            {
+                name: 'StackColumns',
+                fieldLabel: 'Stack Columns',
+                xtype: 'rallycheckboxfield'
             }
 
         ];
@@ -78,35 +94,33 @@ Ext.define('CustomApp', {
 
     _chartRefresh: function()
     {
-        Ext.getCmp('CapChart').destroy();
+        if ( Ext.getCmp('CapChart')) { Ext.getCmp('CapChart').destroy();}
         this.iterationOIDs = [];
-        this.iterStore.destroyStore();
+        if( this.iterStore) { this.iterStore.destroyStore();}
         this._startApp(this);
     },
 
     launch: function() {
 
-        var app = this;
-
-        app.add( {
-        });
+        var me = this;
 
         Ext.getCmp('StartDate').on( {
             change: this._chartRefresh,
-            scope: app
+            scope: me
         });
 
         Ext.getCmp('EndDate').on( {
             change: this._chartRefresh,
-            scope: app
+            scope: me
         });
 
-        app._startApp(app);
+        this._startApp();
     },
 
-    _startApp: function(app) {
+    _startApp: function() {
+        var me = this;
 
-        app.iterStore = Ext.create('Rally.data.wsapi.Store', {
+        this.iterStore = Ext.create('Rally.data.wsapi.Store', {
             model: 'Iteration',
             autoLoad: 'true',
             filters: [
@@ -135,8 +149,9 @@ Ext.define('CustomApp', {
 //                    });
 
                     // Now get utilisation entries
-                    app._getUtilisation(app, data);
-                }
+                    me._getUtilisation(data);
+                },
+                scope: me
             }
         });
 
@@ -145,10 +160,11 @@ Ext.define('CustomApp', {
 
     },
 
-    _getUtilisation: function(app, iterations) {
+    _getUtilisation: function(iterations) {
 
         // Create a sequence of OR 'ed filters
         var oredFilters = [];
+        var me = this;
 
         _.each(iterations, function (iter) {
             oredFilters.push({ property: 'Iteration', value: iter.get('_ref')});
@@ -226,7 +242,7 @@ Ext.define('CustomApp', {
                     var loadMax = (Math.floor(_.max(_.pluck(summs,'Total'))/50)+1) * 50;
 
                     //Now do least mean squares of load into load average
-                    var results = app._leastSquares(_.pluck(summs, 'Total'), 1, summs.length);
+                    var results = me._leastSquares(_.pluck(summs, 'Total'), 1, summs.length);
                     for ( i = 0; i < summs.length; i++){
                         summs[i].Average =  results.yintercept + ((i+1) * results.slope);
                     }
@@ -262,9 +278,8 @@ Ext.define('CustomApp', {
                         store: rStore,
                         style: 'background:#fff',
                         animate: true,
-                        autoShow: true,
-                        height: 600,
-                        width: 1024,
+                        width: me.getWidth() - 50,
+                        height: me.getHeight() - 50,
                         legend: {
                             position: 'bottom'
                         },
@@ -289,17 +304,17 @@ Ext.define('CustomApp', {
 
                             }
                         ],
-                        plotOptions: {
-                            series: {
-                                stacking: 'normal',
-                                stack: 0
-                            }
-                        },
+                        // plotOptions: {
+                        //     series: {
+                        //         stacking: 'normal',
+                        //         stack: 0
+                        //     }
+                        // },
 
                         series: [
                             {
                                 type: 'column',
-                                stack: 0,
+                                stacked: me.getSetting('StackColumns'),
                                 axis: 'left',
                                 xField: 'Iteration',
                                 yField: ['During', 'After', 'Outstanding'],
@@ -311,7 +326,7 @@ Ext.define('CustomApp', {
                                     trackMouse: true,
 //                                    width: 140,
 //                                    height: 28,
-                                    renderer: app._tipsRenderer
+                                    renderer: me._tipsRenderer
 
                                 }
                             },
