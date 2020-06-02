@@ -2,9 +2,9 @@ Ext.define('iterRecord', {
     extend: 'Ext.data.Model',
     fields: [
         { name: 'Iteration', type: 'string' },
-        { name: 'During', type: 'int' },
-        { name: 'After', type: 'int' },
-        { name: 'Outstanding', type: 'int' },
+        { name: 'During', type: 'float' },
+        { name: 'After', type: 'float' },
+        { name: 'Outstanding', type: 'float' },
         { name: 'Total', type: 'float' },
         { name: 'Average', type: 'float' }
     ]

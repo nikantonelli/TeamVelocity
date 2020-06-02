@@ -11,9 +11,9 @@
     extend: 'Ext.data.Model',
     fields: [
         { name: 'Iteration', type: 'string' },
-        { name: 'During', type: 'int' },
-        { name: 'After', type: 'int' },
-        { name: 'Outstanding', type: 'int' },
+        { name: 'During', type: 'float' },
+        { name: 'After', type: 'float' },
+        { name: 'Outstanding', type: 'float' },
         { name: 'Total', type: 'float' },
         { name: 'Average', type: 'float' }
     ]
@@ -289,7 +289,7 @@ Ext.define('Niks.Apps.TeamVelocity', {
                         style: 'background:#fff',
                         animate: true,
                         width: me.getWidth() - 50,
-                        height: me.getHeight() - 50,
+                        height: me.getHeight() - 80,
                         legend: {
                             position: 'bottom'
                         },
