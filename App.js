@@ -10,23 +10,26 @@ Ext.define('iterRecord', {
     ]
 });
 
-Ext.define('CustomApp', {
+Ext.define('Niks.Apps.TeamVelocity', {
     extend: 'Rally.app.App',
     componentCls: 'app',
-
+    id: 'niksTVapp',
     config: {
         defaultSettings: {
             UseDefects: true,
             UseTestSets: true,
             UseTestCases: true,
-            StackColumns: false
+            StackColumns: false,
+            ProjectInLabel: false
         }
     },
 
     listeners: {
         resize: function() {
-            if ( Ext.getCmp('CapChart')) { this._chartRefresh(); }
-        }
+            if ( Ext.getCmp('CapChart')) { Ext.getCmp('niksTVapp')._chartRefresh(); }
+            return true;
+        },
+        scope: Ext.getCmp('niksTVapp')
     },
 
     items: [
@@ -38,7 +41,7 @@ Ext.define('CustomApp', {
             items: [
                 {
                     xtype: 'rallydatefield',
-                    id: 'StartDate',
+                    itemId: 'StartDate',
                     stateful: true,
                     fieldLabel: 'Start Date',
                     value: Ext.Date.subtract( new Date(), Ext.Date.DAY, 90) // 90 days of previous iterations
@@ -47,28 +50,23 @@ Ext.define('CustomApp', {
                     xtype: 'rallydatefield',
                     fieldLabel: 'End Date',
                     stateful: true,
-                    id: 'EndDate',
+                    itemId: 'EndDate',
                     value: new Date()
                 }
             ]
-        },
-        {
-            xtype: 'container',
-            id: 'body'
         }
-
     ],
 
-    onSettingsUpdate: function() {
-        this._chartRefresh();
-    },
+    onSettingsUpdate: function(settings) {
+         this._chartRefresh();
+   },
 
     getSettingsFields: function() {
         return [
             {
-                name: 'UseDefects',
-                fieldLabel: 'Include Defects',
-                xtype: 'rallycheckboxfield'
+               name: 'UseDefects',
+               fieldLabel: 'Include Defects',
+               xtype: 'rallycheckboxfield'
             },
             {
                 name: 'UseTestCases',
@@ -84,55 +82,61 @@ Ext.define('CustomApp', {
                 name: 'StackColumns',
                 fieldLabel: 'Stack Columns',
                 xtype: 'rallycheckboxfield'
+            },
+            {
+                name: 'ProjectInLabel',
+                fieldLabel: 'Add Project to Label',
+                xtype: 'rallycheckboxfield'
             }
 
         ];
     },
 
-    iterStore: null,
     iterationOIDs: [],
 
     _chartRefresh: function()
     {
-        if ( Ext.getCmp('CapChart')) { Ext.getCmp('CapChart').destroy();}
-        this.iterationOIDs = [];
-        if( this.iterStore) { this.iterStore.destroyStore();}
-        this._startApp(this);
+        //onSettingsUpdate calls us at the wrong time!
+        if ( Ext.getCmp('CapChart')) { 
+            Ext.getCmp('CapChart').destroy();
+        }
+            this.iterationOIDs = [];
+            this._kickOff();
     },
 
     launch: function() {
 
         var me = this;
 
-        Ext.getCmp('StartDate').on( {
-            change: this._chartRefresh,
+        me.down('#StartDate').on( {
+            change: me._chartRefresh,
             scope: me
         });
 
-        Ext.getCmp('EndDate').on( {
-            change: this._chartRefresh,
+        me.down('#EndDate').on( {
+            change: me._chartRefresh,
             scope: me
         });
 
-        this._startApp();
+        this._kickOff();
     },
 
-    _startApp: function() {
+    _kickOff: function() {
         var me = this;
 
-        this.iterStore = Ext.create('Rally.data.wsapi.Store', {
+        Ext.create('Rally.data.wsapi.Store', {
             model: 'Iteration',
             autoLoad: 'true',
             filters: [
                 {
                     property: 'StartDate',
                     operator: '>',
-                    value: Ext.getCmp('StartDate').getValue()
+                    value: me.down('#StartDate').getValue()
                 },
                 {
                     property: 'StartDate',
                     operator: '<',
-                    value: Ext.getCmp('EndDate').getValue()
+                    value: me.down('#EndDate').getValue()
                 }
             ],
             sorters: [
@@ -148,8 +152,8 @@ Ext.define('CustomApp', {
 //                            '_ref': record.get('_ref') } );
 //                    });
 
-                    // Now get utilisation entries
-                    me._getUtilisation(data);
+                    // Now get stats
+                    me._getStats(data);
                 },
                 scope: me
             }
@@ -160,7 +164,7 @@ Ext.define('CustomApp', {
 
     },
 
-    _getUtilisation: function(iterations) {
+    _getStats: function(iterations) {
 
         // Create a sequence of OR 'ed filters
         var oredFilters = [];
@@ -184,7 +188,7 @@ Ext.define('CustomApp', {
         if (this.getSetting('UseTestSets')){
             models.push('Test Set');
         }
-        usStore = Ext.create('Rally.data.wsapi.artifact.Store', {
+        Ext.create('Rally.data.wsapi.artifact.Store', {
             models: ['User Story', 'Defect','Test Case', 'Test Set'],
             limit: Infinity,
             filters: Rally.data.wsapi.Filter.or(oredFilters),
@@ -196,10 +200,10 @@ Ext.define('CustomApp', {
                         sortedUS.push( {
                             'Iteration' : iter,
                             'data'      : _.filter(data,
-                            function(record) {
-                                if (!record.get('Iteration')) return false;
-                                return record.get('Iteration')._ref === iter.get('_ref'); }
-                            )
+                                                function(record) {
+                                                    if (!record.get('Iteration')) return false;
+                                                    return record.get('Iteration')._ref === iter.get('_ref'); }
+                                                )
                         });
                     });
                     var summs = [];
@@ -208,7 +212,7 @@ Ext.define('CustomApp', {
                             if (n.data.length){
 
                                 var lIter = n.Iteration.get('_refObjectName') +
-                                                ' (' + n.Iteration.get('Project')._refObjectName + ')';
+                                                (me.getSetting('ProjectInLabel')?'(' + n.Iteration.get('Project')._refObjectName + ')':'');
                                 var InIter = 0;
                                 var AfterIter = 0;
                                 var TotalIter = 0;
@@ -237,9 +241,6 @@ Ext.define('CustomApp', {
                                         'Average': 0 });
                             }
                     });
-
-                    //Find the max utilisation for the chart
-                    var loadMax = (Math.floor(_.max(_.pluck(summs,'Total'))/50)+1) * 50;
 
                     //Now do least mean squares of load into load average
                     var results = me._leastSquares(_.pluck(summs, 'Total'), 1, summs.length);
@@ -271,7 +272,7 @@ Ext.define('CustomApp', {
                             }
                         });
 
-                    Ext.getCmp('body').add({
+                    me.add({
                         xtype: 'chart',
                         theme: 'appTheme',
                         id: 'CapChart',
@@ -279,7 +280,7 @@ Ext.define('CustomApp', {
                         style: 'background:#fff',
                         animate: true,
                         width: me.getWidth() - 50,
-                        height: me.getHeight() - 50,
+                        height: me.getHeight() - 80,
                         legend: {
                             position: 'bottom'
                         },
@@ -304,12 +305,7 @@ Ext.define('CustomApp', {
 
                             }
                         ],
-                        // plotOptions: {
-                        //     series: {
-                        //         stacking: 'normal',
-                        //         stack: 0
-                        //     }
-                        // },
+
 
                         series: [
                             {
@@ -324,8 +320,6 @@ Ext.define('CustomApp', {
                                 },
                                 tips: {
                                     trackMouse: true,
-//                                    width: 140,
-//                                    height: 28,
                                     renderer: me._tipsRenderer
 
                                 }
@@ -355,24 +349,6 @@ Ext.define('CustomApp', {
 
                         ]
                     });
-
-//                    Ext.getCmp('CapChart').on( {
-//                        click: function() {
-//                            Ext.create('Rally.ui.dialog.ConfirmDialog', {
-//                                title: 'Save as JPEG',
-//                                message: 'Save chart to file?',
-//                                confirmLabel: 'Save',
-//                                listeners: {
-//                                    confirm: function(){
-//                                        Ext.getCmp('CapChart').save({
-//                                            type: 'image/jpeg'
-//                                        });
-//                                    }
-//                                }
-//                            });
-//                        }
-//                    });
-
                 }
             },
             fetch: ['AcceptedDate', 'Iteration', 'PlanEstimate']
