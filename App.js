@@ -85,7 +85,7 @@ Ext.define('Niks.Apps.TeamVelocity', {
             },
             {
                 name: 'ProjectInLabel',
-                fieldLabel: 'Add Project to Label',
+                fieldLabel: 'Separate Teams',
                 xtype: 'rallycheckboxfield'
             }
 
@@ -164,11 +164,19 @@ Ext.define('Niks.Apps.TeamVelocity', {
 
     },
 
-    _getStats: function(iterations) {
+    _getStats: function(allIterations) {
 
         // Create a sequence of OR 'ed filters
         var oredFilters = [];
         var me = this;
+        var iterations = allIterations;
+        
+        //If we don't want to see all the individual team numbers...
+        if (me.getSetting('ProjectInLabel') === false) {
+            iterations =  _.uniq(allIterations, function(iteration) { return iteration.get('_refObjectName');});
+        }
+
+        //Iterations are or'ed together so we only have to do the one fetch, but then we have to sort them out afterwards
 
         _.each(iterations, function (iter) {
             oredFilters.push({ property: 'Iteration', value: iter.get('_ref')});
@@ -201,9 +209,13 @@ Ext.define('Niks.Apps.TeamVelocity', {
                             'Iteration' : iter,
                             'data'      : _.filter(data,
                                                 function(record) {
-                                                    if (!record.get('Iteration')) return false;
-                                                    return record.get('Iteration')._ref === iter.get('_ref'); }
-                                                )
+                                                    if (!record.get('Iteration')) { return false; }
+                                                    if (me.getSetting('ProjectInLabel') === true) {
+                                                        return record.get('Iteration')._ref === iter.get('_ref'); 
+                                                    } else {
+                                                        return record.get('Iteration')._refObjectName === iter.get('_refObjectName'); 
+                                                    }
+                                                })
                         });
                     });
                     var summs = [];
